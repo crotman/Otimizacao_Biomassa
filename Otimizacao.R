@@ -3,7 +3,7 @@ library(pryr)
 library(tidyverse)
 
 
-
+diretorio <- "c:\\temp\\"
 
 
 tipo_de_otimizacao = "VP"
@@ -14,45 +14,19 @@ MoJo <- 0
 #Lendo municipios e informacoes de energia e carga
 
 
-
-
 #Lendo parâmetros adicionais
 
 MWH_por_GJ = 0.27777777777777777777777778
 
 anos_vida_util_usina = 30 
 
-#parametros <-  read.csv("C:\\Mestrado\\parametros.csv",sep = ";", encoding = "UTF-8",dec = "," ) %>% as_tibble()
 
-parametros <-  read.csv("c:\\temp\\parametros_novo_v2.csv",sep = ",", encoding = "UTF-8",dec = ".", stringsAsFactors = FALSE ) %>% as_tibble() 
+parametros <-  read.csv(paste(diretorio,"\\parametros_novo_v2.csv", sep=""),sep = ",", encoding = "UTF-8",dec = ".", stringsAsFactors = FALSE ) %>% as_tibble() 
 
 
 str(parametros)
 
 head(parametros)
-
-
-
-
-#lendo os caches de tir
-
-#Caches completos
-#for (i in 1:31)
-#{
-  
-#  TIRs <- TIRs %>% 
-#    bind_rows(read.csv(paste("C:\\temp\\tirs_",i,".csv",sep='' )))
-    
-#}
-
-#TIRs <- read.csv("C:\\temp\\minitirs.csv")
-
-
-
-#TIRs <- TIRs %>% 
-#  #mutate(usina = as.integer(usina/100000), anuais = as.integer(anuais/100000)) %>% 
-#  mutate(usina = as.intinstaeger(usina/100000), anuais = as.integer(anuais/100000)) %>% 
-#  arrange(usina,anuais)
 
 
 
@@ -480,43 +454,10 @@ calcula_lucro_escolhendo_sede <- function(particoes) {
     #AQUI MUDADO PARA CALCULAR A TIR
     mutate ( lucro_final_abs = lucro_total_sem_usina - custo_usina) %>% 
     mutate ( lucro_final = lucro_final_abs) %>% 
-    #mutate( fluxo_usina_para_cache = as.integer(-1 * round(custo_usina,-5)), fluxo_anual_para_cache =  as.integer( round(lucro_total_sem_usina/anos_vida_util_usina, -5 ))) %>%
-    #left_join(TIRs, by = c("fluxo_usina_para_cache" = "usina", "fluxo_anual_para_cache" = "anuais")) %>% 
-    #mutate(lucro_final = tir )
     identity()
   
   
-  #if (tipo_de_otimizacao == "VP")
-  #{
-  #  #AQUI MUDADO PARA CALCULAR VALOR PRESENTE A UMA TAXA FIXA
-  #  lucro_candidatas <- lucro_candidatas %>% 
-  #    mutate (lucro_final = -custo_usina - pv(taxa,anos_vida_util_usina,0,lucro_total_sem_usina,0)   ) %>% 
-  #    identity()
-  #}
-  #else
-  #{
-  #  if (tipo_de_otimizacao == "TIR")
-  #  {
-  #    lucro_candidatas <- lucro_candidatas %>% 
-  #      mutate( fluxo_usina_para_cache = as.integer(-1 * round(custo_usina,-5)/100000), fluxo_anual_para_cache =  as.integer( round(lucro_total_sem_usina/anos_vida_util_usina, -5 )/100000)) %>%
-  #      left_join(TIRs, by = c("fluxo_usina_para_cache" = "usina", "fluxo_anual_para_cache" = "anuais")) %>% 
-  #      mutate(lucro_final = tir ) %>% 
-  #      identity()
-   # }
-  #}  
-      
-              
-  #lucro_candidatas <- lucro_candidatas %>%
-  #  mutate( fluxo_usina_para_cache = as.integer(-1 * round(custo_usina,-5)/100000), fluxo_anual_para_cache =  as.integer( round(lucro_total_sem_usina/anos_vida_util_usina, -5 )/100000))
-  
-  #lucro_candidatas <- lucro_candidatas %>%
-  #  arrange(fluxo_usina_para_cache,fluxo_anual_para_cache) %>% 
-  #  left_join(TIRs, by = c("fluxo_usina_para_cache" = "usina", "fluxo_anual_para_cache" = "anuais"))
-    
-  #lucro_candidatas <- lucro_candidatas %>%
-  #  mutate(lucro_final = tir )
-    
-    
+
   maiores_lucros <- lucro_candidatas %>% 
     group_by(sede_original) %>% 
     summarise(maior_lucro = max(lucro_final))
@@ -535,24 +476,8 @@ calcula_lucro_escolhendo_sede <- function(particoes) {
     inner_join( candidatas_vencedoras, by = (c("sede" = "sede_original" ))) %>% 
     mutate( sede = if_else(sede != as.integer(-1), as.integer(candidata_vencedora), as.integer(-1) )) %>% 
     select( sede, cidades, lucro, label) %>% 
-    #limpando as particoes negativas para a vazia
-    #mutate( sede = if_else(lucro < 0, as.integer(-1), sede) ) %>% 
-    #mutate( label = if_else(lucro < 0, as.integer(0), label) ) %>% 
-    
-    
-    #o lucro da vazia eh zero
-    #mutate( lucro = if_else( sede == -1, 0, lucro )  )  %>% 
-    
     arrange( sede )
   
-  #Jogando as cidades sem lucro para a região para a partição vazia
-  #particoes <- particoes %>% 
-  #  left_join(matriz_so_lucro_energia, c("sede" = "CD_x", "cidades" = "CD_y" )) %>% 
-  #  mutate(sede = if_else(is.na(lucro.y), as.integer(-1), sede ), label = if_else(is.na(lucro.y), as.integer(0), label ), lucro.x = if_else(is.na(lucro.y), 0, lucro.x ) ) %>% 
-  #  rename(lucro = lucro.x) %>% 
-  #  select(sede, cidades, lucro, label) %>% 
-  #  identity()
-      
 
   lucro_escalar <- particoes %>% 
     select(sede, lucro) %>% 
@@ -751,9 +676,7 @@ realiza_pedaco_passo_busca_local_backup <- function(sedes, ind_municipios, parti
     filter(ind_municipio.x == ind_municipio.y)
   
   
-  #particoes_com_troca_pre_onde_NAO_troca <- particoes_com_troca_pre %>%  
-  #filter(ind_municipio.x != ind_municipio.y)
-  
+
   particoes_com_troca_pre_onde_troca <- particoes_com_troca_pre_onde_troca %>% 
     mutate(
       nao_sede_0 = sede.y != 0, 
@@ -800,51 +723,7 @@ realiza_pedaco_passo_busca_local_backup <- function(sedes, ind_municipios, parti
     bind_rows(particoes_com_troca_pre_onde_troca)
   
   
-  #FIM FORMA ALTERNATIVA
-  
-  #A PARTIR DAQUI FAZ AS TROCAS
-  
-  
-  #particoes_com_troca_pre <- particoes_com_unitario %>% 
-  #  crossing(trocas)  
-  
-  #particoes_com_troca_pre <- particoes_com_troca_pre %>% 
-  #  rename( sede.x = sede, sede.y = sede1, ind_municipio.x = ind_municipio, ind_municipio.y = ind_municipio1, label.x = label, label.y = label1 )
-  
-  #particoes_com_troca_pre <- particoes_com_troca_pre %>% 
-  #  mutate(
-  #    nao_troca = ind_municipio.x != ind_municipio.y, 
-  #    troca = ind_municipio.x == ind_municipio.y, 
-  #    nao_sede_0 = sede.y != 0, 
-  #    sede_0 = sede.y == 0,
-  #    nao_label_menos_1 = label.y != -1 ,
-  #    label_menos_1 =  label.y == -1,
-  #    cidade_eh_sede = cidades == sede.x,
-  #    cidade_nao_sede = cidades != sede.x
-  
-  #  ) 
-  
-  
-  
-  
-  #    particoes_com_troca_pre <- particoes_com_troca_pre %>% 
-  #     mutate ( sede_nova =  nao_troca * sede.x + 
-  #                 troca * nao_sede_0 * sede.y + 
-  #                 troca * sede_0 * cidades,
-  #               label_novo = 
-  #                 nao_troca * label.x + 
-  #                 troca * nao_label_menos_1 * label.y + 
-  #                troca * label_menos_1 * cidade_eh_sede * label.x +  
-  #                 troca * label_menos_1 * cidade_nao_sede * label_mais_1 
-  
-  #      )
-  
-  
-  #  particoes_com_troca_pre <- particoes_com_troca_pre %>% 
-  #        rename (sede = sede_nova, indice = ind_troca, label = label_novo) 
-  
-  
-  
+
   #ATE AQUI FAZ AS TROCAS
   
   particoes_com_troca <- particoes_com_troca_pre %>%  
@@ -853,13 +732,6 @@ realiza_pedaco_passo_busca_local_backup <- function(sedes, ind_municipios, parti
   
   particoes <- calcula_lucro_varias_especificacoes(particoes_com_troca)  
   
-  #particoes_com_troca <- particoes_com_troca %>% 
-  
-  
-  
-  #  mutate(sede= as.factor(sede),cidades = as.factor(cidades))
-  
-  #particoes <- calcula_lucro_varias_especificacoes(particoes_com_troca)  
   particoes
   
   
@@ -984,27 +856,7 @@ realiza_pedaco_passo_busca_local <- function(sedes, ind_municipios, particoes_co
 junta_pedacos_busca_local <- function(sedes, ind_municipios, particoes_com_unitario, max_label, n_pedacos)
 {
   
-  #tam_pedaco <- as.integer(count(ind_municipios) %/% n_pedacos + 1)
-  
-  #lucro_melhor_pedaco <- -1000000000000
-  
-  #for (i in 1:n_pedacos)
-  #{
-  #  ind_municipios_pedaco <- ind_municipios %>% 
-  #    mutate(divisao = ind_municipio %/% tam_pedaco + 1) %>% 
-  #    filter(divisao == i) %>% 
-  #    select(ind_municipio, unitario)
-    
-  #  melhor_do_pedaco <- realiza_pedaco_passo_busca_local(sedes = sedes, ind_municipios = ind_municipios_pedaco, particoes_com_unitario = particoes_com_unitario, max_label = max_label)
-  #  if (max(melhor_do_pedaco$lucro) > lucro_melhor_pedaco)
-  #  {
-  #    resposta <- melhor_do_pedaco
-  #    lucro_melhor_pedaco <- max(melhor_do_pedaco$lucro)
-  #  }
-  #  
 
-  #}
-  
   resposta <- realiza_pedaco_passo_busca_local(sedes = sedes, ind_municipios = ind_municipios, particoes_com_unitario = particoes_com_unitario, max_label = max_label)
   
   resposta
@@ -1088,16 +940,7 @@ gera_mapa_da_particao <- function(particoes){
   
   
   sedes <- sp::merge(cidades, sedes_das_particoes, by.x = "City", by.y = "sede"  )
-  
-  #  obj_tm_shape <- tm_shape(cidades) +
-  #    tm_fill(col ="regiao" ) +
-  #    tm_text(text = "nome_sede") +
-  #    tm_facets(along = "iteracao") +
-  #    tm_shape(sedes) +
-  #    tm_borders() +
-  #    tm_facets(along = "iteracao")
-  
-  
+
   obj_tm_shape <- tm_shape(cidades) +
     tm_fill(col ="regiao" ) +
     tm_bubbles(size ="eh_sede", size.lim = c(0.1, 1.1), scale = 0.5  ) +     
@@ -1441,14 +1284,12 @@ for ( rodada in 1:1)
           
           
           #municipios <-  read.csv("C:\\Mestrado\\junta.csv",sep = ";", encoding = "UTF-8",dec = "," ) %>% as_tibble()
-          municipios <-  read.csv("c:\\temp\\carga_energia_v2.csv",sep = ",", encoding = "UTF-8",dec = "." ) %>% as_tibble() 
+          municipios <-  read.csv(paste(diretorio, "\\carga_energia_v2.csv", sep=""),sep = ",", encoding = "UTF-8",dec = "." ) %>% as_tibble() 
           
           #Lendo dados de distÃ¢ncias reais entre municipios
           
-          #distancias <-  read.csv("C:\\Mestrado\\distanciarealmetrossede.csv",sep = "," ) %>% 
-          #  as_tibble() 
-          
-          distancias <-  read.csv("C:\\temp\\distanciarealmetrossede_v2.csv",sep = "," ) %>% 
+
+          distancias <-  read.csv(paste(diretorio, "\\distanciarealmetrossede_v2.csv", sep=""),sep = "," ) %>% 
             as_tibble() 
           
           
@@ -1462,18 +1303,18 @@ for ( rodada in 1:1)
           distancias_inv <- 0
           
           
-          semaforo <- readRDS("c:\\temp\\semaforo.rds")
+          semaforo <- readRDS(paste(diretorio,"\\semaforo.rds", sep=""))
           
           while(!semaforo)
           {
             Sys.sleep(3)
             print("esperando")
-            semaforo <- readRDS("c:\\temp\\semaforo.rds")
+            semaforo <- readRDS(paste(diretorio,"\\semaforo.rds", sep=""))
           }
           
           semaforo <- FALSE
           
-          saveRDS(semaforo, "c:\\temp\\semaforo.rds")
+          saveRDS(semaforo, paste(diretorio,"\\semaforo.rds", sep=""))
           
           UF_scalar <- as.character(parametros[i,"UF"])
           
@@ -1610,7 +1451,7 @@ for ( rodada in 1:1)
           
           semaforo <- TRUE
           
-          saveRDS(semaforo, "c:\\temp\\semaforo.rds")
+          saveRDS(semaforo, paste(diretorio,"\\semaforo.rds", sep=""))
           
           
           
@@ -1879,7 +1720,7 @@ for ( rodada in 1:1)
               
               if (perturbacao %% 10 == 0)
               {
-                write_csv(particoes_iteracoes,paste("c:\\temp\\final_",as.character(GL_CENARIO_INICIO), "_ATE_", as.character(GL_CENARIO_FIM), "-perturb-", as.character(perturbacao),"-rodada-", as.character(rodada), "-codcenario-", cod_cenario, ".csv", sep=""))
+                write_csv(particoes_iteracoes,paste(diretorio,"\\final_",as.character(GL_CENARIO_INICIO), "_ATE_", as.character(GL_CENARIO_FIM), "-perturb-", as.character(perturbacao),"-rodada-", as.character(rodada), "-codcenario-", cod_cenario, ".csv", sep=""))
                 particoes_iteracoes <- particoes %>% 
                   mutate(taxa = taxa) %>% 
                   mutate(cod_cenario = cod_cenario) %>% 
@@ -1899,7 +1740,7 @@ for ( rodada in 1:1)
             }
           }
           
-          write_csv(particoes_iteracoes,paste("c:\\temp\\final_",as.character(GL_CENARIO_INICIO), "_ATE_", as.character(GL_CENARIO_FIM), "-perturb-", as.character(perturbacao),"-rodada-", as.character(rodada), "-codcenario-", cod_cenario, ".csv", sep=""))
+          write_csv(particoes_iteracoes,paste(diretorio, "\\final_",as.character(GL_CENARIO_INICIO), "_ATE_", as.character(GL_CENARIO_FIM), "-perturb-", as.character(perturbacao),"-rodada-", as.character(rodada), "-codcenario-", cod_cenario, ".csv", sep=""))
           
           cat("\014")  
           #gera_video_das_particoes (particoes_iteracoes, intervalo = 1 )
